@@ -7,6 +7,9 @@
 
 #include <matrices.h>
 
+#include <QDebug>
+#include <iostream>
+#include <string>
 
 class MeshQuad
 {
@@ -186,6 +189,15 @@ public:
 	 * @param a angle
 	 */
 	void tourne_quad(int q, float a);
+
+    /**
+     * @brief determinant
+     * @param A
+     * @param B
+     * @param C
+     * @return déterminant de C par rapport à AB
+     */
+    float determinant(Vec3 A,Vec3 B,Vec3 C);
 
 };
 

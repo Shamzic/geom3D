@@ -124,14 +124,46 @@ void Viewer::mousePressEvent(QMouseEvent* event)
 	// recupere le rayon de la souris dans la scene (P,Dir)
 	qglviewer::Vec Pq = camera()->unprojectedCoordinatesOf(qglviewer::Vec(event->x(), event->y(), -1.0));
 	qglviewer::Vec Qq = camera()->unprojectedCoordinatesOf(qglviewer::Vec(event->x(), event->y(), 1.0));
-	Vec3 P(Pq[0],Pq[1],Pq[2]);
-	Vec3 Dir(Qq[0]-Pq[0],Qq[1]-Pq[1],Qq[2]-Pq[2]);
 
+    Vec3 P(Pq[0],Pq[1],Pq[2]);
+	Vec3 Dir(Qq[0]-Pq[0],Qq[1]-Pq[1],Qq[2]-Pq[2]);
+/*
+    qDebug()<<"P : ("<<P.x<<","<<P.y<<","<<P.z<<")";
+    qDebug()<<"Q : ("<<Qq.x<<","<<Qq.y<<","<<Qq.z<<")";
+    qDebug()<<"Dir : ("<<Dir.x<<","<<Dir.y<<","<<Dir.z<<")";
+
+*/
+
+    //***
+    Vec3 inter(0,0,0);
+    if(m_mesh.intersect_ray_quad(P,Dir,0,inter))
+        qDebug()<<"Intersection dans ABCD";
+    else
+       qDebug()<<"Pas d'intersection dans ABCD";
+
+     qDebug()<<"Intersection : ("<<inter.x<<","<<inter.y<<","<<inter.z<<")";
+     if(m_mesh.intersect_ray_quad(P,Dir,4,inter))
+         qDebug()<<"Intersection dans EFGH";
+     else
+        qDebug()<<"Pas d'intersection dans EFGH";
+      qDebug()<<"Intersection : ("<<inter.x<<","<<inter.y<<","<<inter.z<<")";
+
+      if(m_mesh.intersect_ray_quad(P,Dir,8,inter))
+          qDebug()<<"Intersection dans ABFE";
+      else
+         qDebug()<<"Pas d'intersection dans ABFE";
+       qDebug()<<"Intersection : ("<<inter.x<<","<<inter.y<<","<<inter.z<<")";
+       m_selected_quad = m_mesh.intersected_visible(P,Dir);
+       qDebug()<<"Face trouvée :"<<m_selected_quad;
 	if (event->modifiers() & Qt::ShiftModifier)
 	{
+
+        //***
 		m_selected_quad = m_mesh.intersected_visible(P,Dir);
+        qDebug()<<"Face "<<m_selected_quad;
 		if (m_selected_quad>=0)
 		{
+            qDebug()<<"SHIFT APPUYE !";
 			m_selected_frame = m_mesh.local_frame(m_selected_quad);
 		}
 	}
