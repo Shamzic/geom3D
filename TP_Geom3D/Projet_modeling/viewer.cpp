@@ -17,7 +17,7 @@ Viewer::Viewer():
 	BLANC(1,1,1),
 	GRIS(0.5,0.5,0.5),
 	NOIR(0,0,0),
-	m_selected_quad(-1)
+    m_selected_quad(-1)
 {}
 
 
@@ -53,16 +53,19 @@ void Viewer::init()
 
 void Viewer::draw_repere(const Mat4& global)
 {
-    /*
 	// affiche un repere de taille 1 place suivant global.
     Mat4 tr = global;
+/*
+    for(int i=0;i<4;i++)
+        for(int j=0;j<4;j++)
+            qDebug()<<"["<<i<<"]["<<j<<"]="<<tr[i][j];*/
     auto fleche = [&] (Vec3 coul)
     {
-        m_prim.draw_cylinder(tr*translate(0,0,1.5)*scale(0.5,0.5,1.95), coul);
-        m_prim.draw_cone(tr*translate(0,0,3), coul);
+        m_prim.draw_cylinder(tr*translate(0,0,0.4)*scale(0.1,0.1,0.95), coul);
+        m_prim.draw_cone(tr*translate(0,0,0.90)*scale(0.2,0.2,0.2), coul);
     };
 
-    m_prim.draw_sphere(tr,BLANC);
+    m_prim.draw_sphere(tr*scale(0.2,0.2,0.2),BLANC);
     fleche(BLEU);
 
     tr = global*rotateY(90);
@@ -70,7 +73,6 @@ void Viewer::draw_repere(const Mat4& global)
 
     tr = global*rotateX(-90);
     fleche(VERT);
-    */
 }
 
 
@@ -98,13 +100,39 @@ void Viewer::keyPressEvent(QKeyEvent *event)
 		case Qt::Key_C:
 			// Attention ctrl c utilise pour screen-shot !
 			if (!(event->modifiers() & Qt::ControlModifier))
-				m_mesh.create_cube();
-		break;
+                m_mesh.create_cube();
+            break;
+        case Qt::Key_E:
+            // e extrusion
+            if (m_selected_quad>=0)
+            {
+                m_mesh.extrude_quad(m_selected_quad);
+                m_selected_quad=-1;
+            }
+            break;
+        case Qt::Key_D:
+            // +/- decale
+            if (m_selected_quad>=0)
+            {
+                m_mesh.decale_quad(m_selected_quad,1);
+            }
+            break;
 
-			// e extrusion
-			// +/- decale
-			// z/Z shrink
-			// t/T tourne
+        case Qt::Key_S:
+            // z/Z shrink
+            if (m_selected_quad>=0)
+            {
+                m_mesh.shrink_quad(m_selected_quad,1);
+            }
+            break;
+
+        case Qt::Key_T:
+            // t/T tourne
+            if (m_selected_quad>=0)
+            {
+                m_mesh.tourne_quad(m_selected_quad,10);
+            }
+            break;
 
 			// Attention au cas m_selected_quad == -1
 
@@ -133,8 +161,7 @@ void Viewer::mousePressEvent(QMouseEvent* event)
     qDebug()<<"Dir : ("<<Dir.x<<","<<Dir.y<<","<<Dir.z<<")";
 
 */
-
-    //***
+/*
     Vec3 inter(0,0,0);
     if(m_mesh.intersect_ray_quad(P,Dir,0,inter))
         qDebug()<<"Intersection dans ABCD";
@@ -155,6 +182,13 @@ void Viewer::mousePressEvent(QMouseEvent* event)
        qDebug()<<"Intersection : ("<<inter.x<<","<<inter.y<<","<<inter.z<<")";
        m_selected_quad = m_mesh.intersected_visible(P,Dir);
        qDebug()<<"Face trouvée :"<<m_selected_quad;
+       */
+
+    /*
+    Vec3 inter(0,0,0);
+    if(m_mesh.intersect_ray_quad(P,Dir,0,inter))
+        qDebug()<<"Intersection : ("<<inter.x<<","<<inter.y<<","<<inter.z<<")";
+*/
 	if (event->modifiers() & Qt::ShiftModifier)
 	{
 

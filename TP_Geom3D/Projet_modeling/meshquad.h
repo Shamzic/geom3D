@@ -198,6 +198,12 @@ public:
      * @return déterminant de C par rapport à AB
      */
     float determinant(Vec3 A,Vec3 B,Vec3 C);
+    /**
+     * @brief MeshQuad::display_vec
+     * @param X
+     * @param name
+     */
+    void display_vec(Vec3 X,QString name);
 
 };
 
