@@ -750,103 +750,76 @@ void MeshQuad::tourne_quad(int q, float a)
     Vec3 C = m_points.at(m_quad_indices.at(q+2));
     Vec3 B = m_points.at(m_quad_indices.at(q+3));
 
-    Vec3 Z = normal_of_quad(A,B,C,D);
-/*
-    Mat4 transfo;
-    if (a>=0)
+    Vec3 Zl = normal_of_quad(A,B,C,D);
+    display_vec(Zl,"Z");
+
+    Vec3 diago =(C-A);
+    diago*=0.5f;
+    Vec3 centreA = A+diago;
+
+    Vec3 diago2 =(A-C);
+    diago2*=0.5f;
+    Vec3 centreC = C+diago2;
+
+    Vec3 diago3 =(D-B);
+    diago3*=0.5f;
+    Vec3 centreB = B+diago3;
+
+    Vec3 diago4 =(B-D);
+    diago4*=0.5f;
+    Vec3 centreD = D+diago4;
+
+    auto rotationAutourAxe= [&] (Vec3 U, float angle, glm::mat3& transformation)
     {
-        transfo = rotateZ(a);
-    }
-    if(a<0)
-    {
-        a*=-1;
-        transfo = glm::inverse(rotateZ(a));
-    }
-    */
-    glm::mat3 transfo;
-    glm::mat3 transfo1;
-    glm::mat3 transfo2;
-    glm::mat3 transfo3;
+        transformation[0][0] = U.x*U.x*(1-cos(angle))+cos(angle);
+        transformation[0][1] = U.x*U.y*(1-cos(angle))+U.z*sin(angle);
+        transformation[0][2] = U.x*U.z*(1-cos(angle))-U.y*sin(angle);
 
-    transfo1[0][0] = Z.x*Z.x;
-    transfo1[0][1] = Z.y*Z.x;
-    transfo1[0][2] = Z.z*Z.x;
+        transformation[1][0] = U.x*U.y*(1-cos(angle))-U.z*sin(angle);
+        transformation[1][1] = U.y*U.y*(1-cos(angle))+cos(angle);
+        transformation[1][2] = U.y*U.z*(1-cos(angle))+U.x*sin(angle);
 
-    transfo1[1][0] = Z.x*Z.y;
-    transfo1[1][1] = Z.y*Z.y;
-    transfo1[1][2] = Z.z*Z.y;
+        transformation[2][0] = U.x*U.z*(1-cos(angle))+U.y*sin(angle);
+        transformation[2][1] = U.y*U.z*(1-cos(angle))-U.x*sin(angle);
+        transformation[2][2] = U.z*U.z*(1-cos(angle))+cos(angle);
+    };
 
-    transfo1[2][0] = Z.x*Z.z;
-    transfo1[2][2] = Z.y*Z.z;
-    transfo1[2][2] = Z.z*Z.z;
+    A=A-centreA;
+    C=C-centreC;
+    B=B-centreB;
+    D=D-centreD;
 
-    //----------------------
-    transfo2[0][0] = 1;
-    transfo2[0][1] = 0;
-    transfo2[0][2] = 0;
+    Vec3 normale_Zl_Zg=cross(Zl,Vec3(0,0,1));
+    float angle_Zl_Zg = acos((Zl.x*0+Zl.y*0+Zl.z*1)/((sqrt(Zl.x*Zl.x+Zl.y*Zl.y+Zl.z*Zl.z))*(1)));
 
-    transfo2[1][0] = 0;
-    transfo2[1][1] = 1;
-    transfo2[1][2] = 0;
+    glm::mat3 rotation_normaleZlZg;
+    rotationAutourAxe(normale_Zl_Zg,angle_Zl_Zg,rotation_normaleZlZg);
 
-    transfo2[2][0] = 0;
-    transfo2[2][2] = 0;
-    transfo2[2][2] = 1;
-    //----------------------
-    transfo3[0][0] = 0;
-    transfo3[0][1] = Z.z;
-    transfo3[0][2] = -Z.y;
+    A=A*rotation_normaleZlZg;
+    C=C*rotation_normaleZlZg;
+    B=B*rotation_normaleZlZg;
+    D=D*rotation_normaleZlZg;
 
-    transfo3[1][0] = -Z.z;
-    transfo3[1][1] = 0;
-    transfo3[1][2] = Z.x;
+    glm::mat3 rotation_normaleZ;
+    rotationAutourAxe(Vec3(0,0,1),a,rotation_normaleZ);
 
-    transfo3[2][0] = Z.y;
-    transfo3[2][2] = -Z.x;
-    transfo3[2][2] = 0;
+    A=A*rotation_normaleZ;
+    C=C*rotation_normaleZ;
+    B=B*rotation_normaleZ;
+    D=D*rotation_normaleZ;
 
-    transfo = (1-cos(a))*transfo1+cos(a)*transfo2+sin(a)*transfo3;
+    A=A*glm::inverse(rotation_normaleZlZg);
+    C=C*glm::inverse(rotation_normaleZlZg);
+    B=B*glm::inverse(rotation_normaleZlZg);
+    D=D*glm::inverse(rotation_normaleZlZg);
 
-/*
-    transfo[0][0]=cos(a);
-    transfo[0][1]=sin(a);
-    transfo[0][2]=0;
-    transfo[0][3]=0;
 
-    transfo[1][0]=-sin(a);
-    transfo[1][1]=cos(a);
-    transfo[1][2]=0;
-    transfo[1][3]=0;
+    A=A+centreA;
+    D=D+centreD;
+    C=C+centreC;
+    B=B+centreB;
 
-    transfo[2][0]=0;
-    transfo[2][1]=0;
-    transfo[2][2]=0;
-    transfo[2][3]=0;
-
-    transfo[3][0]=0;
-    transfo[3][1]=0;
-    transfo[3][2]=0;
-    transfo[3][3]=1;
-*/
-/*
-    Vec4 A4 (A.x,A.y,A.z,1.0);
-    A4 = transfo*A4;
-    A = Vec3 (A4.x/A4[3],A4.y/A4[3],A4.z/A4[3]);
-    Vec4 B4 (B.x,B.y,B.z,1.0);
-    B4 = transfo*B4;
-    B = Vec3 (B4.x/B4[3],B4.y/B4[3],B4.z/B4[3]);
-    Vec4 C4 (C.x,C.y,C.z,1.0);
-    C4 = transfo*C4;
-    C = Vec3 (C4.x/C4[3],C4.y/C4[3],C4.z/C4[3]);
-    Vec4 D4 (D.x,D.y,D.z,1.0);
-    D4 = transfo*D4;
-    D = Vec3 (D4.x/D4[3],D4.y/D4[3],D4.z/D4[3]);
-*/
-    A=A*transfo;
-    B=B*transfo;
-    C=C*transfo;
-    D=D*transfo;
-    m_points.at(m_quad_indices.at(q))=A;
+    m_points.at(m_quad_indices.at(q)) = A;
     m_points.at(m_quad_indices.at(q+1))=D;
     m_points.at(m_quad_indices.at(q+2))=C;
     m_points.at(m_quad_indices.at(q+3))=B;
@@ -854,7 +827,7 @@ void MeshQuad::tourne_quad(int q, float a)
 	gl_update();
 }
 
-void MeshQuad::display_vec(Vec3 X,QString name){
 
+void MeshQuad::display_vec(Vec3 X,QString name){
     qDebug()<<name<<" : ("<<X.x<<","<<X.y<<","<<X.z<<")";
 }

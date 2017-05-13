@@ -93,6 +93,7 @@ void Viewer::keyPressEvent(QKeyEvent *event)
 {
 	switch(event->key())
 	{
+        // Attention au cas m_selected_quad == -1
 		case Qt::Key_Escape:
 			exit(EXIT_SUCCESS);
 			break;
@@ -107,6 +108,7 @@ void Viewer::keyPressEvent(QKeyEvent *event)
             if (m_selected_quad>=0)
             {
                 m_mesh.extrude_quad(m_selected_quad);
+                qDebug()<<"Face sélectionnée : "<<m_selected_quad;
                 m_selected_quad=-1;
             }
             break;
@@ -118,11 +120,12 @@ void Viewer::keyPressEvent(QKeyEvent *event)
             }
             break;
 
-        case Qt::Key_S:
+        case Qt::Key_R:
+            // J'ai mis R pour reduce car le S sur mon QT affiche un pop-up de stereo, pas très esthétique !
             // z/Z shrink
             if (m_selected_quad>=0)
             {
-                m_mesh.shrink_quad(m_selected_quad,1);
+                m_mesh.shrink_quad(m_selected_quad,0.9);
             }
             break;
 
@@ -130,13 +133,25 @@ void Viewer::keyPressEvent(QKeyEvent *event)
             // t/T tourne
             if (m_selected_quad>=0)
             {
-                m_mesh.tourne_quad(m_selected_quad,10);
+                m_mesh.tourne_quad(m_selected_quad,0.1); // -0,1 pour tourner dans l'autre sens
             }
             break;
-
-			// Attention au cas m_selected_quad == -1
-
-
+            case Qt::Key_F:
+                // Figure 2 du projet (en forme d'étoile) en appuyant sur "f"
+                    m_mesh.create_cube();
+                    m_mesh.extrude_quad(0);
+                    m_mesh.extrude_quad(4);
+                    m_mesh.extrude_quad(8);
+                    m_mesh.extrude_quad(12);
+                    m_mesh.extrude_quad(16);
+                    m_mesh.extrude_quad(20);
+                    for(int i=20;i<=1600;i=i+20)
+                    {
+                       m_mesh.shrink_quad(i,0.8);
+                       m_mesh.tourne_quad(i,0.1);
+                       m_mesh.extrude_quad(i);
+                    }
+                    break;
 		default:
 			break;
 	}
