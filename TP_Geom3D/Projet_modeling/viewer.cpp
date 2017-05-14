@@ -88,6 +88,17 @@ void Viewer::draw()
     draw_repere(m_selected_frame);
 }
 
+void Viewer::rec(int face)
+{
+        m_mesh.extrude_quad(face);
+        m_mesh.decale_quad(face+20,2);
+
+        if(face<=1000)
+        {
+            rec(face+4);
+        }
+}
+
 
 void Viewer::keyPressEvent(QKeyEvent *event)
 {
@@ -116,16 +127,23 @@ void Viewer::keyPressEvent(QKeyEvent *event)
             // +/- decale
             if (m_selected_quad>=0)
             {
-                m_mesh.decale_quad(m_selected_quad,1);
+
+                if (event->modifiers() & Qt::ShiftModifier)
+                    m_mesh.decale_quad(m_selected_quad,-0.1);
+                else
+                    m_mesh.decale_quad(m_selected_quad,0.1);
             }
             break;
 
-        case Qt::Key_R:
+        case Qt::Key_R:// SCHRINK
             // J'ai mis R pour reduce car le S sur mon QT affiche un pop-up de stereo, pas très esthétique !
             // z/Z shrink
             if (m_selected_quad>=0)
             {
-                m_mesh.shrink_quad(m_selected_quad,0.9);
+                if (event->modifiers() & Qt::ShiftModifier)
+                    m_mesh.shrink_quad(m_selected_quad,0.9);
+                else
+                    m_mesh.shrink_quad(m_selected_quad,1.1);
             }
             break;
 
@@ -133,7 +151,10 @@ void Viewer::keyPressEvent(QKeyEvent *event)
             // t/T tourne
             if (m_selected_quad>=0)
             {
-                m_mesh.tourne_quad(m_selected_quad,0.1); // -0,1 pour tourner dans l'autre sens
+                if (event->modifiers() & Qt::ShiftModifier)
+                    m_mesh.tourne_quad(m_selected_quad,0.1); // -0,1 pour tourner dans l'autre sens
+                else
+                    m_mesh.tourne_quad(m_selected_quad,-0.1);
             }
             break;
             case Qt::Key_F:
@@ -145,13 +166,16 @@ void Viewer::keyPressEvent(QKeyEvent *event)
                     m_mesh.extrude_quad(12);
                     m_mesh.extrude_quad(16);
                     m_mesh.extrude_quad(20);
-                    for(int i=20;i<=1600;i=i+20)
+                    for(int i=20;i<=2400;i=i+20)
                     {
-                       m_mesh.shrink_quad(i,0.8);
-                       m_mesh.tourne_quad(i,0.1);
+                       m_mesh.shrink_quad(i,0.9);
+                       m_mesh.tourne_quad(i,0.11);
                        m_mesh.extrude_quad(i);
                     }
+
                     break;
+
+
 		default:
 			break;
 	}
@@ -170,44 +194,9 @@ void Viewer::mousePressEvent(QMouseEvent* event)
 
     Vec3 P(Pq[0],Pq[1],Pq[2]);
 	Vec3 Dir(Qq[0]-Pq[0],Qq[1]-Pq[1],Qq[2]-Pq[2]);
-/*
-    qDebug()<<"P : ("<<P.x<<","<<P.y<<","<<P.z<<")";
-    qDebug()<<"Q : ("<<Qq.x<<","<<Qq.y<<","<<Qq.z<<")";
-    qDebug()<<"Dir : ("<<Dir.x<<","<<Dir.y<<","<<Dir.z<<")";
 
-*/
-/*
-    Vec3 inter(0,0,0);
-    if(m_mesh.intersect_ray_quad(P,Dir,0,inter))
-        qDebug()<<"Intersection dans ABCD";
-    else
-       qDebug()<<"Pas d'intersection dans ABCD";
-
-     qDebug()<<"Intersection : ("<<inter.x<<","<<inter.y<<","<<inter.z<<")";
-     if(m_mesh.intersect_ray_quad(P,Dir,4,inter))
-         qDebug()<<"Intersection dans EFGH";
-     else
-        qDebug()<<"Pas d'intersection dans EFGH";
-      qDebug()<<"Intersection : ("<<inter.x<<","<<inter.y<<","<<inter.z<<")";
-
-      if(m_mesh.intersect_ray_quad(P,Dir,8,inter))
-          qDebug()<<"Intersection dans ABFE";
-      else
-         qDebug()<<"Pas d'intersection dans ABFE";
-       qDebug()<<"Intersection : ("<<inter.x<<","<<inter.y<<","<<inter.z<<")";
-       m_selected_quad = m_mesh.intersected_visible(P,Dir);
-       qDebug()<<"Face trouvée :"<<m_selected_quad;
-       */
-
-    /*
-    Vec3 inter(0,0,0);
-    if(m_mesh.intersect_ray_quad(P,Dir,0,inter))
-        qDebug()<<"Intersection : ("<<inter.x<<","<<inter.y<<","<<inter.z<<")";
-*/
 	if (event->modifiers() & Qt::ShiftModifier)
-	{
-
-        //***
+    {
 		m_selected_quad = m_mesh.intersected_visible(P,Dir);
         qDebug()<<"Face "<<m_selected_quad;
 		if (m_selected_quad>=0)

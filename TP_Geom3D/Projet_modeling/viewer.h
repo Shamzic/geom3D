@@ -68,6 +68,8 @@ protected:
 	int m_selected_quad;
 	glm::mat4 m_selected_frame;
 
+    void rec(int face);
+
 };
 
 #endif

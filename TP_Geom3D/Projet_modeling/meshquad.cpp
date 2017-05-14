@@ -167,8 +167,8 @@ void MeshQuad::convert_quads_to_edges(const std::vector<int>& quads, std::vector
         edges.push_back(quads.at(i+2));
         edges.push_back(quads.at(i+3));
 
-        edges.push_back(quads.at(i+3));
-        edges.push_back(quads.at(i));
+      //  edges.push_back(quads.at(i+3));
+      //  edges.push_back(quads.at(i));
     }
 	// Pour chaque quad on genere 4 aretes, 1 arete = 2 indices.
 	// Mais chaque arete est commune a 2 quads voisins !
@@ -221,7 +221,7 @@ P(-2,-1,0)   | C|______|__|B
 
 	gl_update();
 
-    // **** TESTS ****
+    // **** TESTS **** //
     /*
     qDebug()<<"Normale à la face ADCB:";
     Vec3 normale = normal_of_quad(m_points.at(a),m_points.at(d),m_points.at(c),m_points.at(b));
@@ -259,6 +259,11 @@ Vec3 MeshQuad::normal_of_quad(const Vec3& A, const Vec3& B, const Vec3& C, const
 	// le produit vectoriel n'est pas commutatif U ^ V = - V ^ U
 	// ne pas oublier de normaliser le resultat.
 
+    // Comme le quad peut se décomposer triangles
+    // 2 possibilités de 2 triangles => 4 triangles
+    // J'ai donc calculé la moyenne des normales aux
+    // 4 triangles du quad.
+
     Vec3 BA,BC,DA,DC,CB,CD,AD,AB,victor;
     BA = A-B;
     BC = C-B;
@@ -268,7 +273,6 @@ Vec3 MeshQuad::normal_of_quad(const Vec3& A, const Vec3& B, const Vec3& C, const
     DA=A-D;
     Vec3 normale_CDA = cross(DA,DC);
     //qDebug()<<"Normale à CDA : ("<<normale_CDA.x<<","<<normale_CDA.y<<","<<normale_CDA.z<<")";
-
 
     CB=B-C;
     CD=D-C;
@@ -323,12 +327,13 @@ float MeshQuad::area_of_quad(const Vec3& A, const Vec3& B, const Vec3& C, const 
     return (float)aire_ABCD;
 }
 
+// Juste une petite fonction pour calculer le déteminant de ABC
 float MeshQuad::determinant(Vec3 A,Vec3 B,Vec3 C)
 {
      return (float) A.x*((B.y)*(C.z)-(C.y)*(B.z)) - B.x*((A.y*C.z)-(C.y*A.z)) + C.x*((A.y*B.z)-(B.y*A.z));
 }
 
-// PAS OK
+// OK
 bool MeshQuad::is_points_in_quad(const Vec3& P, const Vec3& A, const Vec3& B, const Vec3& C, const Vec3& D)
 {
 	// On sait que P est dans le plan du quad.
@@ -338,12 +343,15 @@ bool MeshQuad::is_points_in_quad(const Vec3& P, const Vec3& A, const Vec3& B, co
 
     Vec3 normalOfQuad = normal_of_quad(A,B,C,D);
 
+    // Ici on calcule dans une équation de plan la valeur de P
+    // par rapport aux 4 plans ABN, BCN,CDN et DAN
+    // Avec N la moyenne des normales
+
     auto CalculP = [&] (Vec3 A, Vec3 B, Vec3 P) -> float
     {
-
         auto getNormal = [&] (Vec3 A, Vec3 B, Vec3 N) -> Vec3
         {
-
+            // P=BA
             float px = A.x - B.x;
             float py = A.y - B.y;
             float pz = A.z - B.z;
@@ -352,23 +360,24 @@ bool MeshQuad::is_points_in_quad(const Vec3& P, const Vec3& A, const Vec3& B, co
             float ny = (pz*N.x)-(px*N.z);
             float nz = (px*N.y)-(py*N.x);
 
-            Vec3 res = Vec3(nx,ny,nz);
-
-            return res;
+            return Vec3(nx,ny,nz);
         };
-
         Vec3 normal = getNormal(A,B,normalOfQuad);
 
         float d = (normal.x*A.x+normal.y*A.y+normal.z*A.z)*(-1);
-
+        // On résout l'équation de plan avec P
         return normal.x*P.x + normal.y*P.y + normal.z*P.z + d;
     };
+
 /*
     qDebug()<<"Valeur de P / ABN : "<<CalculP(A,B,P);
     qDebug()<<"Valeur de P / BCN : "<<CalculP(B,C,P);
     qDebug()<<"Valeur de P / CDN : "<<CalculP(C,D,P);
     qDebug()<<"Valeur de P / DAN : "<<CalculP(D,A,P);
 */
+    // Si P est positif pour les 4 plans, c'est qu'il est en dessous de
+    // chaque plan et donc qu'il est dans le quad.
+    // En ayant la condition que P soit dans le plan du quad..
     if(CalculP(A,B,P)>=0 && CalculP(B,C,P)>=0 && CalculP(C,D,P)>=0 && CalculP(D,A,P)>=0)
         return true;
     else
@@ -390,25 +399,36 @@ bool MeshQuad::intersect_ray_quad(const Vec3& P, const Vec3& Dir, int q, Vec3& i
     Vec3 C = m_points.at(m_quad_indices.at(q+2));
     Vec3 D = m_points.at(m_quad_indices.at(q+3));
 
-
     Vec3 BA,BC,DA,DC,CB,CD,AD,AB;
     BA = A-B;
     BC = C-B;
     Vec3 normale_ABC = cross(BC,BA);
+
+    // Cette condition est nécessaire pour éviter de traiter les cas
+    // où la direction est orthogonale à la normale du plan
+    // => cas où on est parallèle au quad ou confondu dans le quad.
     if(normale_ABC*Dir != Vec3(0,0,0))
     {
         float d = (normale_ABC.x*A.x+normale_ABC.y*A.y+normale_ABC.z*A.z)*(-1);
+        // On cherche le paramètre de l'équation du plan du triangle ABC.
         float alpha = (-d - normale_ABC.x*P.x - normale_ABC.y*P.y - normale_ABC.z*P.z) / (normale_ABC.x*Dir.x + normale_ABC.y*Dir.y + normale_ABC.z*Dir.z);
+        // On calcule l'intersection de P dans le plan
         Vec3 interPlan = Vec3(P.x+Dir.x*alpha,P.y+Dir.y*alpha,P.z+Dir.z*alpha);
         if(alpha >0 && interPlan!=Vec3(0,0,0))
         {
             if(is_points_in_quad(interPlan,A,B,C,D))
             {
+                // S'il existe une intersection il suffit de vérifier si elle
+                // est dans le quad, de la retenir dans le paramètre inter
+                // et de s'arrêter ici
                 inter=interPlan;
                 return true;
             }
         }
     }
+    // Si on a pas trouvé d'intersection avec le premier triangle, on peut
+    // essayer avec les autres, c'est la même chose, j'aurais pu en faire une fonction
+
     DC=C-D;
     DA=A-D;
     Vec3 normale_CDA = cross(DA,DC);
@@ -466,19 +486,24 @@ bool MeshQuad::intersect_ray_quad(const Vec3& P, const Vec3& Dir, int q, Vec3& i
         }
     }
 
+    // Si on a trouvé aucune intersection dans les triangles du quad,
+    // alors inter reste intact et on renvoie juste false.
     return false;
 }
 
 // OK
 int MeshQuad::intersected_visible(const Vec3& P, const Vec3& Dir)
 {
-    bool intersectionTrouvee=false;
-    int interMin=1000000;
-    float DirMin = 10000;
-    float distance_intersection= -1;
     // on parcours tous les quads
     // on teste si il y a intersection avec le rayon
     // on garde le plus proche (de P)
+    bool intersectionTrouvee=false;
+    // J'ai initialisé une distance trop grande exprès pour pouvoir
+    // prendre en compte directement la première distance trouvée.
+    int interMin=1000000;
+    float DirMin = 10000;
+
+    float distance_intersection= -1;
     Vec3 inter (0,0,0);
     for(int i=0;i<(int)m_quad_indices.size();i=i+4)
     {
@@ -506,7 +531,7 @@ int MeshQuad::intersected_visible(const Vec3& P, const Vec3& Dir)
         return -1;
 }
 
-// PAS OK
+// OK
 Mat4 MeshQuad::local_frame(int q)
 {
 
@@ -538,14 +563,14 @@ Mat4 MeshQuad::local_frame(int q)
     diagonale.x=diagonale.x/2;
     diagonale.y=diagonale.y/2;
     diagonale.z=diagonale.z/2;
+
+    // Vecteur de l'origine du repère local
     Vec3 O = A+diagonale;
     //display_vec(O,"O");
     Vec3 X = (B-A); // AB
 
-
     Vec3 Y = (A-D); // DA
     //display_vec(X,"X");
-    //display_vec(Y,"Y au début (=AD) ");
 
     Vec3 Z = normal_of_quad(A,B,C,D);
     //display_vec(Z,"Z sans translation");
@@ -553,21 +578,13 @@ Mat4 MeshQuad::local_frame(int q)
     float norme_Y = sqrt(Y.x*Y.x+Y.y*Y.y+Y.z*Y.z);
     Y=Y/norme_Y;
     //display_vec(Y,"Y normalisé");
-    Y=Y;
-    //Y = Vec3 (Y.x/norme_Y,Y.y/norme_Y,Y.z/norme_Y);
 
     float norme_X = sqrt(X.x*X.x+X.y*X.y+X.z*X.z);
-    //X = Vec3 (X.x/norme_X,X.y/norme_X,X.z/norme_X);
 
     X=X/norme_X;
-    //Z = Vec3 (Z.x+O.x,Z.y+O.y,Z.z+O.z);
+
     float norme_Z = sqrt(Z.x*Z.x+Z.y*Z.y+Z.z*Z.z);
     Z=Z/norme_Z;
-
-    //display_vec(Z,"Z");
-
-    //display_vec(Y,"Y translaté au repère local");
-    //display_vec(X,"X translaté au repère local");
 
     Mat4 transfo;
 
@@ -593,7 +610,7 @@ Mat4 MeshQuad::local_frame(int q)
 
     return transfo;
 }
-// PAS OK
+// OK
 void MeshQuad::extrude_quad(int q)
 {
     // recuperation des indices de points
@@ -667,22 +684,11 @@ void MeshQuad::decale_quad(int q, float d)
     B = B+Z;
     C = C+Z;
     D = D+Z;
-    /*
-    int a_decale = add_vertex(A);
-    int b_decale = add_vertex(B);
-    int c_decale = add_vertex(C);
-    int d_decale = add_vertex(D);
-    */
+
     m_points.at(m_quad_indices.at(q))=A;
     m_points.at(m_quad_indices.at(q+1))=B;
     m_points.at(m_quad_indices.at(q+2))=C;
     m_points.at(m_quad_indices.at(q+3))=D;
-/*
-    m_quad_indices.at(q)=a_decale;
-    m_quad_indices.at(q+1)=b_decale;
-    m_quad_indices.at(q+2)=c_decale;
-    m_quad_indices.at(q+3)=d_decale;
-    */
 
 	gl_update();
 }
@@ -732,7 +738,7 @@ void MeshQuad::shrink_quad(int q, float s)
 	gl_update();
 }
 
-// PAS OK
+// OK
 void MeshQuad::tourne_quad(int q, float a)
 {
 	// recuperation des indices de points
@@ -753,6 +759,8 @@ void MeshQuad::tourne_quad(int q, float a)
     Vec3 Zl = normal_of_quad(A,B,C,D);
     display_vec(Zl,"Z");
 
+    // Calcul des centres pour avoir les distances de chaque points
+    // utile pour les translations
     Vec3 diago =(C-A);
     diago*=0.5f;
     Vec3 centreA = A+diago;
@@ -769,6 +777,8 @@ void MeshQuad::tourne_quad(int q, float a)
     diago4*=0.5f;
     Vec3 centreD = D+diago4;
 
+    // Fabrique la atrice de rotation autour d'une droite
+    // de vecteur directeur U et d'angle "angle"
     auto rotationAutourAxe= [&] (Vec3 U, float angle, glm::mat3& transformation)
     {
         transformation[0][0] = U.x*U.x*(1-cos(angle))+cos(angle);
@@ -783,15 +793,18 @@ void MeshQuad::tourne_quad(int q, float a)
         transformation[2][1] = U.y*U.z*(1-cos(angle))-U.x*sin(angle);
         transformation[2][2] = U.z*U.z*(1-cos(angle))+cos(angle);
     };
-
+    // On ramène les points au repère d'origine
     A=A-centreA;
     C=C-centreC;
     B=B-centreB;
     D=D-centreD;
 
+    // Calcul de la normale au repère local et au Z d'origine
     Vec3 normale_Zl_Zg=cross(Zl,Vec3(0,0,1));
+    // Calcul de l'angle entre les deux Z par rapport à la normale calculée avant
     float angle_Zl_Zg = acos((Zl.x*0+Zl.y*0+Zl.z*1)/((sqrt(Zl.x*Zl.x+Zl.y*Zl.y+Zl.z*Zl.z))*(1)));
 
+    // Rotation autour de la normale aux deux Z
     glm::mat3 rotation_normaleZlZg;
     rotationAutourAxe(normale_Zl_Zg,angle_Zl_Zg,rotation_normaleZlZg);
 
@@ -800,6 +813,7 @@ void MeshQuad::tourne_quad(int q, float a)
     B=B*rotation_normaleZlZg;
     D=D*rotation_normaleZlZg;
 
+    // Les points peuvent enfin tourner autour du Z global
     glm::mat3 rotation_normaleZ;
     rotationAutourAxe(Vec3(0,0,1),a,rotation_normaleZ);
 
@@ -808,12 +822,15 @@ void MeshQuad::tourne_quad(int q, float a)
     B=B*rotation_normaleZ;
     D=D*rotation_normaleZ;
 
+    // On tourne à nouveau dans le sens inverse de la rotation d'angle
+    // par rapport à la normale aux deux Z pour remettre les points
+    // dans leur face avec le bon Z local
     A=A*glm::inverse(rotation_normaleZlZg);
     C=C*glm::inverse(rotation_normaleZlZg);
     B=B*glm::inverse(rotation_normaleZlZg);
     D=D*glm::inverse(rotation_normaleZlZg);
 
-
+    // On retranslate les points à leur repère local
     A=A+centreA;
     D=D+centreD;
     C=C+centreC;
@@ -827,7 +844,7 @@ void MeshQuad::tourne_quad(int q, float a)
 	gl_update();
 }
 
-
+// Juste une fonction pour débugger et afficher les vecteurs
 void MeshQuad::display_vec(Vec3 X,QString name){
     qDebug()<<name<<" : ("<<X.x<<","<<X.y<<","<<X.z<<")";
 }
