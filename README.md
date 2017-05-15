@@ -6,16 +6,16 @@ L'objectif est de générer des extrapolations et redismensionnement de cube à 
 
 ## Touches 
 
-Générer un cube simple avec: 'c'
+- Générer un cube simple avec: 'C'
 
-Sélectionner une face et positionner repère local : SHIFT + clic
+- Sélectionner une face et positionner repère local : SHIFT + clic
 
-Réduire/agrandir : 'r' / SHIFT + 'r'
+- Réduire/agrandir : 'R' / SHIFT + 'R'
 
-Rotation dans le sens trigo/sens trigo inverse : 't' / SHIFT + 't'
+- Rotation dans le sens trigo/sens trigo inverse : 'T' / SHIFT + 'T'
 
-Extruder une face : 'e'
+- Extruder une face : 'E'
 
-Décaler une face selon sa normale vers l'extérieur/intérieur : 'd' / SHIFT +d
+- Décaler une face selon sa normale vers l'extérieur/intérieur : 'D' / SHIFT +D
 
-Afficher une figure géométrique en forme d'étoile : 'f'
+- Afficher une figure géométrique en forme d'étoile : 'F'
