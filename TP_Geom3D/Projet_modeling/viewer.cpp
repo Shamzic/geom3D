@@ -120,7 +120,8 @@ void Viewer::keyPressEvent(QKeyEvent *event)
             {
                 m_mesh.extrude_quad(m_selected_quad);
                 qDebug()<<"Face sélectionnée : "<<m_selected_quad;
-                m_selected_quad=-1;
+                //m_selected_quad=-1;
+
             }
             break;
         case Qt::Key_D:
@@ -166,7 +167,7 @@ void Viewer::keyPressEvent(QKeyEvent *event)
                     m_mesh.extrude_quad(12);
                     m_mesh.extrude_quad(16);
                     m_mesh.extrude_quad(20);
-                    for(int i=20;i<=2400;i=i+20)
+                    for(int i=40;i<=2400;i=i+20)
                     {
                        m_mesh.shrink_quad(i,0.9);
                        m_mesh.tourne_quad(i,0.11);
@@ -174,11 +175,14 @@ void Viewer::keyPressEvent(QKeyEvent *event)
                     }
 
                     break;
-
-
 		default:
 			break;
+
 	}
+
+    // Pour redessiner le repère sur la dernière bonne face (par exemple extrude et decale)
+    if (m_selected_quad>=0)
+        m_selected_frame = m_mesh.local_frame(m_selected_quad);
 
 	// retrace la fenetre
 	updateGL();

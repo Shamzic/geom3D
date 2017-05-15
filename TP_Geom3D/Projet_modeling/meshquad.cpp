@@ -534,7 +534,6 @@ int MeshQuad::intersected_visible(const Vec3& P, const Vec3& Dir)
 // OK
 Mat4 MeshQuad::local_frame(int q)
 {
-
 	// Repere locale = Matrice de transfo avec
 	// les trois premieres colones: X,Y,Z locaux
 	// la derniere colonne l'origine du repere
@@ -568,7 +567,6 @@ Mat4 MeshQuad::local_frame(int q)
     Vec3 O = A+diagonale;
     //display_vec(O,"O");
     Vec3 X = (B-A); // AB
-
     Vec3 Y = (A-D); // DA
     //display_vec(X,"X");
 
@@ -654,6 +652,17 @@ void MeshQuad::extrude_quad(int q)
     add_quad(m_quad_indices.at(q+2),m_quad_indices.at(q+3),l,k);
     add_quad(m_quad_indices.at(q+3),m_quad_indices.at(q),i,l);
     add_quad(i,j,k,l);
+
+
+    m_quad_indices.at(q)=i;
+    m_quad_indices.at(q+1)=j;
+    m_quad_indices.at(q+2)=k;
+    m_quad_indices.at(q+3)=l;
+    m_points.at(m_quad_indices.at(q))=A_extrude;
+    m_points.at(m_quad_indices.at(q+1))=B_extrude;
+    m_points.at(m_quad_indices.at(q+2))=C_extrude;
+    m_points.at(m_quad_indices.at(q+3))=D_extrude;
+
     gl_update();
 }
 
